@@ -1,0 +1,27 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="DMRDataBridge.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="Host" Type="System.String" Scope="User">
+      <Value Profile="(Default)">10.10.1.106</Value>
+    </Setting>
+    <Setting Name="HostPort" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">62030</Value>
+    </Setting>
+    <Setting Name="Password" Type="System.String" Scope="User">
+      <Value Profile="(Default)">passw0rd</Value>
+    </Setting>
+    <Setting Name="StationID" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">313541202</Value>
+    </Setting>
+    <Setting Name="LocalPort" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">62035</Value>
+    </Setting>
+    <Setting Name="KeepAliveInterval" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">5000</Value>
+    </Setting>
+    <Setting Name="Callsign" Type="System.String" Scope="User">
+      <Value Profile="(Default)">DMRDATA</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
