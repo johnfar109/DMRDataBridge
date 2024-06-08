@@ -23,6 +23,9 @@ namespace DMRDataBridge
         private bool _connected = false;
 
         private bool _pingState = false;
+        private bool _pingActive = false;
+
+        IAsyncResult ar_ = null;
 
         public MainDisplay()
         {
@@ -181,10 +184,13 @@ namespace DMRDataBridge
             {
                 _connected = true;
                 toolStripLabelConStatus.Text = "Connected";
-                toolStripLabelPing.Text = "Ping";
+                toolStripLabelStatus.Text = "Ping";
                 btnConnect.Enabled = false;
                 tmrPing.Interval = Properties.Settings.Default.KeepAliveInterval;
                 tmrPing.Enabled = true;
+                _pingActive = false;
+
+                StartListening();
             }
 
             return _ep;
@@ -194,76 +200,20 @@ namespace DMRDataBridge
         {
             if (_connected)
             {
-                bool pingGood = false;
-                
-                // ## Ping ##
-                // send Ping
-                byte[] pingCmd = Encoding.ASCII.GetBytes("RPTPING").Concat(BitConverter.GetBytes(Properties.Settings.Default.StationID).Reverse().ToArray()).ToArray();
-
-                // Send Ping Msg
-                _udpClient.Send(pingCmd, pingCmd.Length);
-
-                // Read Response Body Ping
-                var pingRespBody = _udpClient.Receive(ref _ep);
-
-                if (pingRespBody.Length > 0)
+                if (!_pingActive)
                 {
-                    // Parse Response Body - Ping
+                    // ## Ping ##
+                    // send Ping
+                    byte[] pingCmd = Encoding.ASCII.GetBytes("RPTPING").Concat(BitConverter.GetBytes(Properties.Settings.Default.StationID).Reverse().ToArray()).ToArray();
 
-                    var pingRespHeadNak = Encoding.ASCII.GetString(pingRespBody, 0, 6);
-                    if ("MSTNAK" == pingRespHeadNak)
-                    {
-                        var pingRespStationIdNak = BitConverter.ToUInt32(pingRespBody.Skip(6).Reverse().ToArray(), 0);
-                        if (Properties.Settings.Default.StationID == pingRespStationIdNak)
-                        {
-                            toolStripLabelPing.Text = "Ping: NAK";
-                        }
-                        else
-                        {
-                            toolStripLabelPing.Text = "Ping: NAK - Station Id Missmatch";
-                        }
-                    }
-                    else
-                    {
-                        var pingRespHead = Encoding.ASCII.GetString(pingRespBody, 0, 7);
-                        if ("MSTPONG" == pingRespHead)
-                        {
-                            var pingRespStationId = BitConverter.ToUInt32(pingRespBody.Skip(7).Reverse().ToArray(), 0);
-                            if (Properties.Settings.Default.StationID == pingRespStationId)
-                            {
-                                pingGood = true;
-                            }
-                            else
-                            {
-                                toolStripLabelPing.Text = "Ping: Station Id Missmatch";
-                            }
-                        }
-                        else
-                        {
-                            toolStripLabelPing.Text = "Ping: Unknown Response";
-                        }
-                    }
-
+                    // Send Ping Msg
+                    _udpClient.Send(pingCmd, pingCmd.Length);
+                    _pingActive = true;
                 }
                 else
                 {
-                    toolStripLabelPing.Text = "Ping: No Response";
-                }
-
-                if (pingGood)
-                {
-                    if (_pingState)
-                    {
-                        toolStripLabelPing.Text = "Ping";
-                    }
-                    else
-                    {
-                        toolStripLabelPing.Text = "Pong";
-                    }
-                    _pingState = !_pingState;
-                }
-                else
-                {
+                    //The last Ping Never got a Pong
+                    //Shut it down
                     Disconnect();
                 }
             }
@@ -273,17 +223,145 @@ namespace DMRDataBridge
         {
             if (_connected)
             {
+                // send close
+                byte[] closeCmd = Encoding.ASCII.GetBytes("RPTCL").Concat(BitConverter.GetBytes(Properties.Settings.Default.StationID).Reverse().ToArray()).ToArray();
+                
+                // Send close Msg
+                _udpClient.Send(closeCmd, closeCmd.Length);
+
                 Disconnect();
+            }
+        }
+
+        private void StartListening()
+        {
+            if (_connected)
+            {
+                ar_ = _udpClient.BeginReceive(Receive, new object());
+            }
+        }
+
+        private void Receive(IAsyncResult ar)
+        {
+            if (_connected)
+            {
+                bool packetGood = false;
+                byte[] respBody = _udpClient.EndReceive(ar, ref _ep);
+
+                if (respBody.Length > 0)
+                {
+                    var packetType = Encoding.ASCII.GetString(respBody, 0, 4);
+                    switch (packetType)
+                    {
+                        case "MSTP":
+                            //Ping
+                            // Parse Response Body - Ping
+                            var pingRespHead = Encoding.ASCII.GetString(respBody, 0, 7);
+                            if ("MSTPONG" == pingRespHead)
+                            {
+                                var pingRespStationId = BitConverter.ToUInt32(respBody.Skip(7).Reverse().ToArray(), 0);
+                                if (Properties.Settings.Default.StationID == pingRespStationId)
+                                {
+                                    packetGood = true;
+                                    _pingActive = false;
+
+                                    if (_pingState)
+                                    {
+                                        toolStripLabelStatus.Text = "Ping";
+                                    }
+                                    else
+                                    {
+                                        toolStripLabelStatus.Text = "Pong";
+                                    }
+                                    _pingState = !_pingState;
+
+                                }
+                                else
+                                {
+                                    toolStripLabelStatus.Text = "Ping: Station Id Missmatch";
+                                }
+                            }
+                            else
+                            {
+                                toolStripLabelStatus.Text = "Error: Unknown 'MSTP' Response";
+                            }
+                            break;
+                        case "MSTN":
+                            // check for Master NAK
+                            var respHeadNak = Encoding.ASCII.GetString(respBody, 0, 6);
+                            if ("MSTNAK" == respHeadNak)
+                            {
+                                var respStationIdNak = BitConverter.ToUInt32(respBody.Skip(6).Reverse().ToArray(), 0);
+                                if (Properties.Settings.Default.StationID == respStationIdNak)
+                                {
+                                    toolStripLabelStatus.Text = "Error: NAK";
+                                }
+                                else
+                                {
+                                    toolStripLabelStatus.Text = "Error: NAK - Station Id Missmatch";
+                                }
+                            }
+                            else
+                            {
+                                toolStripLabelStatus.Text = "Error: Unknown 'MSTN' Response";
+                            }
+                            break;
+                        case "DMRD":
+                            // DMR Daata Packets
+                            packetGood = true;
+                            break;
+                        case "MSTC":
+                            // Check to See if a close command form Master
+                            var closeRespHead = Encoding.ASCII.GetString(respBody, 0, 5);
+                            if ("MSTCL"== closeRespHead)
+                            {
+                                // sutdown the connection
+                                packetGood = false;
+                                toolStripLabelStatus.Text = "Master: Close";
+                            }
+                            else
+                            {
+                                toolStripLabelStatus.Text = "Error: Unknown 'MSTC' Response";
+                            }
+                            break;
+                        default:
+                                toolStripLabelStatus.Text = "Error: Unknown Packet Type " + packetType;
+                            break;
+                    } 
+                }
+                else
+                {
+                    toolStripLabelStatus.Text = "Error: Empty Packet";
+                }
+
+                if (packetGood)
+                {
+                    // TODO check or anything else?
+                }
+                else
+                {
+                    Disconnect();
+                }
+
+
+                StartListening();
             }
         }
 
         private void Disconnect()
         {
-            _connected = false;
-            tmrPing.Enabled = false;
-            _udpClient.Close();
-            toolStripLabelConStatus.Text = "Disconnected";
-            btnConnect.Enabled = true;
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new MethodInvoker(Disconnect));
+            }
+            else
+            {
+                _connected = false;
+                tmrPing.Enabled = false;
+                _udpClient.Close();
+                toolStripLabelConStatus.Text = "Disconnected";
+                btnConnect.Enabled = true;
+            }
         }
 
     }

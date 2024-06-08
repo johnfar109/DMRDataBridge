@@ -34,7 +34,7 @@
             this.toolStripMain = new System.Windows.Forms.ToolStrip();
             this.toolStripLabelConStatus = new System.Windows.Forms.ToolStripLabel();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripLabelPing = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripLabelStatus = new System.Windows.Forms.ToolStripLabel();
             this.toolStripMain.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -59,7 +59,7 @@
             this.toolStripMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripLabelConStatus,
             this.toolStripSeparator1,
-            this.toolStripLabelPing});
+            this.toolStripLabelStatus});
             this.toolStripMain.Location = new System.Drawing.Point(0, 311);
             this.toolStripMain.Name = "toolStripMain";
             this.toolStripMain.Size = new System.Drawing.Size(293, 25);
@@ -79,9 +79,9 @@
             // 
             // toolStripLabelPing
             // 
-            this.toolStripLabelPing.Name = "toolStripLabelPing";
-            this.toolStripLabelPing.Size = new System.Drawing.Size(57, 22);
-            this.toolStripLabelPing.Text = "Waiting...";
+            this.toolStripLabelStatus.Name = "toolStripLabelPing";
+            this.toolStripLabelStatus.Size = new System.Drawing.Size(57, 22);
+            this.toolStripLabelStatus.Text = "Waiting...";
             // 
             // MainDisplay
             // 
@@ -107,7 +107,7 @@
         private System.Windows.Forms.ToolStrip toolStripMain;
         private System.Windows.Forms.ToolStripLabel toolStripLabelConStatus;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
-        private System.Windows.Forms.ToolStripLabel toolStripLabelPing;
+        private System.Windows.Forms.ToolStripLabel toolStripLabelStatus;
     }
 }
 
