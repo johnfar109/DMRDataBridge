@@ -13,6 +13,7 @@ using System.Windows.Forms;
 
 namespace DMRDataBridge
 {
+
     public partial class MainDisplay : Form
     {
         private UdpClient _udpClient;
@@ -26,6 +27,8 @@ namespace DMRDataBridge
         private bool _pingActive = false;
 
         IAsyncResult ar_ = null;
+
+        private int packetCount = 0;
 
         public MainDisplay()
         {
@@ -309,6 +312,13 @@ namespace DMRDataBridge
                         case "DMRD":
                             // DMR Daata Packets
                             packetGood = true;
+
+                            var packet = new DmrdPacket(respBody);
+
+                            // DEBUG - Debug Display Packet Count
+                            packetCount++;
+                            DisplayPacketCount();
+                            
                             break;
                         case "MSTC":
                             // Check to See if a close command form Master
@@ -361,6 +371,18 @@ namespace DMRDataBridge
                 _udpClient.Close();
                 toolStripLabelConStatus.Text = "Disconnected";
                 btnConnect.Enabled = true;
+            }
+        }
+
+        private void DisplayPacketCount()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new MethodInvoker(DisplayPacketCount));
+            }
+            else
+            {
+                labelPacketCount.Text = packetCount.ToString();
             }
         }
 

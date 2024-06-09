@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DmrdPacket.cs" />
     <Compile Include="MainDisplay.cs">
       <SubType>Form</SubType>
     </Compile>
