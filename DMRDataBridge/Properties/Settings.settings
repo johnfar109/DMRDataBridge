@@ -23,5 +23,8 @@
     <Setting Name="Callsign" Type="System.String" Scope="User">
       <Value Profile="(Default)">DMRDATA</Value>
     </Setting>
+    <Setting Name="UdpTimeout" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">5000</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

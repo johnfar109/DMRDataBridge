@@ -50,6 +50,9 @@ namespace DMRDataBridge
         {
             // open the port 
             _udpClient.Connect(_ep);
+            // Set the timeouts
+            _udpClient.Client.SendTimeout = Properties.Settings.Default.UdpTimeout;
+            _udpClient.Client.ReceiveTimeout = Properties.Settings.Default.UdpTimeout;
 
             bool doPhase2 = false;
             bool doPhase3 = false;
@@ -60,34 +63,42 @@ namespace DMRDataBridge
             // Form and send Login Phase 1 Msg
             byte[] phase1Cmd = Encoding.ASCII.GetBytes("RPTL").Concat(BitConverter.GetBytes(Properties.Settings.Default.StationID).Reverse().ToArray()).ToArray();
 
-            // Send Phase 1 Msg
-            _udpClient.Send(phase1Cmd, phase1Cmd.Length);
-
-            // Read Response Body Login Phase 1
-            var phase1RespBody = _udpClient.Receive(ref _ep);
-
-            if (phase1RespBody.Length > 0)
+            try
             {
-                // Parse Response Body - Login Phase 1
-                var phase1RespHead = Encoding.ASCII.GetString(phase1RespBody, 0, 6);
-                if ("RPTACK" == phase1RespHead)
+                // Send Phase 1 Msg
+                _udpClient.Send(phase1Cmd, phase1Cmd.Length);
+
+                // Read Response Body Login Phase 1
+                var phase1RespBody = _udpClient.Receive(ref _ep);
+
+                if (phase1RespBody.Length > 0)
                 {
-                    _phase1RespSalt = BitConverter.ToUInt32(phase1RespBody.Skip(6).Reverse().ToArray(), 0);
-                    doPhase2 = true;
-                }
-                else if ("RPTNAK" == phase1RespHead)
-                {
-                    toolStripLabelConStatus.Text = "Login Phase 1: Rejected";
+                    // Parse Response Body - Login Phase 1
+                    var phase1RespHead = Encoding.ASCII.GetString(phase1RespBody, 0, 6);
+                    if ("RPTACK" == phase1RespHead)
+                    {
+                        _phase1RespSalt = BitConverter.ToUInt32(phase1RespBody.Skip(6).Reverse().ToArray(), 0);
+                        doPhase2 = true;
+                    }
+                    else if ("RPTNAK" == phase1RespHead)
+                    {
+                        toolStripLabelConStatus.Text = "Login Phase 1: Rejected";
+                    }
+                    else
+                    {
+                        toolStripLabelConStatus.Text = "Login Phase 1: Unknown Response";
+                    }
                 }
                 else
                 {
-                    toolStripLabelConStatus.Text = "Login Phase 1: Unknown Response";
+                    toolStripLabelConStatus.Text = "Login Phase 1: No Response";
                 }
             }
-            else
+            catch (SocketException)
             {
-                toolStripLabelConStatus.Text = "Login Phase 1: No Response";
+                toolStripLabelConStatus.Text = "Login Phase 1: Timeout - No Response";
             }
+
 
             if (doPhase2)
             {
@@ -100,40 +111,47 @@ namespace DMRDataBridge
 
                 byte[] phase2Cmd = Encoding.ASCII.GetBytes("RPTK").Concat(BitConverter.GetBytes(Properties.Settings.Default.StationID).Reverse().ToArray()).Concat(secretHash).ToArray();
 
-                // Send Phase 2 Msg
-                _udpClient.Send(phase2Cmd, phase2Cmd.Length);
-
-                // Read Response Body Login Phase 2
-                var phase2RespBody = _udpClient.Receive(ref _ep);
-
-                if (phase2RespBody.Length > 0)
+                try
                 {
-                    // Parse Response Body - Login Phase 2
-                    var phase2RespHead = Encoding.ASCII.GetString(phase2RespBody, 0, 6);
-                    if ("RPTACK" == phase2RespHead)
+                    // Send Phase 2 Msg
+                    _udpClient.Send(phase2Cmd, phase2Cmd.Length);
+                    
+                    // Read Response Body Login Phase 2
+                    var phase2RespBody = _udpClient.Receive(ref _ep);
+
+                    if (phase2RespBody.Length > 0)
                     {
-                        var phase2RespStationId = BitConverter.ToUInt32(phase2RespBody.Skip(6).Reverse().ToArray(), 0);
-                        if (Properties.Settings.Default.StationID == phase2RespStationId)
+                        // Parse Response Body - Login Phase 2
+                        var phase2RespHead = Encoding.ASCII.GetString(phase2RespBody, 0, 6);
+                        if ("RPTACK" == phase2RespHead)
                         {
-                            doPhase3 = true;
+                            var phase2RespStationId = BitConverter.ToUInt32(phase2RespBody.Skip(6).Reverse().ToArray(), 0);
+                            if (Properties.Settings.Default.StationID == phase2RespStationId)
+                            {
+                                doPhase3 = true;
+                            }
+                            else
+                            {
+                                toolStripLabelConStatus.Text = "Login Phase 2: Station Id Missmatch";
+                            }
+                        }
+                        else if ("RPTNAK" == phase2RespHead)
+                        {
+                            toolStripLabelConStatus.Text = "Login Phase 2: Rejected";
                         }
                         else
                         {
-                            toolStripLabelConStatus.Text = "Login Phase 2: Station Id Missmatch";
+                            toolStripLabelConStatus.Text = "Login Phase 2: Unknown Response";
                         }
-                    }
-                    else if ("RPTNAK" == phase2RespHead)
-                    {
-                        toolStripLabelConStatus.Text = "Login Phase 2: Rejected";
                     }
                     else
                     {
-                        toolStripLabelConStatus.Text = "Login Phase 2: Unknown Response";
+                        toolStripLabelConStatus.Text = "Login Phase 2: No Response";
                     }
                 }
-                else
+                catch (SocketException)
                 {
-                    toolStripLabelConStatus.Text = "Login Phase 2: No Response";
+                    toolStripLabelConStatus.Text = "Login Phase 2: Timeout - No Response";
                 }
             }
 
@@ -145,41 +163,48 @@ namespace DMRDataBridge
                 byte[] phase3Cmd = Encoding.ASCII.GetBytes("RPTC").Concat(BitConverter.GetBytes(Properties.Settings.Default.StationID).Reverse().ToArray()).Concat(Encoding.ASCII.GetBytes(Properties.Settings.Default.Callsign)).ToArray();
                 // TODO Pack the rest of the station Config Data
 
-                // Send Phase 3 Msg
-                _udpClient.Send(phase3Cmd, phase3Cmd.Length);
-
-                // Read Response Body Login Phase 3
-                var phase3RespBody = _udpClient.Receive(ref _ep);
-
-                if (phase3RespBody.Length > 0)
+                try
                 {
-                    // Parse Response Body - Login Phase 3
-                    var phase3RespHead = Encoding.ASCII.GetString(phase3RespBody, 0, 6);
-                    if ("RPTACK" == phase3RespHead)
+                    // Send Phase 3 Msg
+                    _udpClient.Send(phase3Cmd, phase3Cmd.Length);
+                    
+                    // Read Response Body Login Phase 3
+                    var phase3RespBody = _udpClient.Receive(ref _ep);
+
+                    if (phase3RespBody.Length > 0)
                     {
-                        var phase3RespStationId = BitConverter.ToUInt32(phase3RespBody.Skip(6).Reverse().ToArray(), 0);
-                        if (Properties.Settings.Default.StationID == phase3RespStationId)
+                        // Parse Response Body - Login Phase 3
+                        var phase3RespHead = Encoding.ASCII.GetString(phase3RespBody, 0, 6);
+                        if ("RPTACK" == phase3RespHead)
                         {
-                            loginGood = true;
+                            var phase3RespStationId = BitConverter.ToUInt32(phase3RespBody.Skip(6).Reverse().ToArray(), 0);
+                            if (Properties.Settings.Default.StationID == phase3RespStationId)
+                            {
+                                loginGood = true;
+                            }
+                            else
+                            {
+                                toolStripLabelConStatus.Text = "Login Phase 3: Station Id Missmatch";
+                            }
+                        }
+                        else if ("RPTNAK" == phase3RespHead)
+                        {
+                            toolStripLabelConStatus.Text = "Login Phase 3: Rejected";
                         }
                         else
                         {
-                            toolStripLabelConStatus.Text = "Login Phase 3: Station Id Missmatch";
+                            toolStripLabelConStatus.Text = "Login Phase 3: Unknown Response";
                         }
-                    }
-                    else if ("RPTNAK" == phase3RespHead)
-                    {
-                        toolStripLabelConStatus.Text = "Login Phase 3: Rejected";
+
                     }
                     else
                     {
-                        toolStripLabelConStatus.Text = "Login Phase 3: Unknown Response";
+                        toolStripLabelConStatus.Text = "Login Phase 3: No Response";
                     }
-
                 }
-                else
+                catch (SocketException)
                 {
-                    toolStripLabelConStatus.Text = "Login Phase 3: No Response";
+                    toolStripLabelConStatus.Text = "Login Phase 3: Timeout - No Response";
                 }
             }
 

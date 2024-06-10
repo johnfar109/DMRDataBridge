@@ -106,5 +106,17 @@ namespace DMRDataBridge.Properties {
                 this["Callsign"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("5000")]
+        public int UdpTimeout {
+            get {
+                return ((int)(this["UdpTimeout"]));
+            }
+            set {
+                this["UdpTimeout"] = value;
+            }
+        }
     }
 }
