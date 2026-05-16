@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="Host" Type="System.String" Scope="User">
-      <Value Profile="(Default)">10.10.1.106</Value>
+      <Value Profile="(Default)">10.10.1.9</Value>
     </Setting>
     <Setting Name="HostPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">62030</Value>
@@ -12,7 +12,7 @@
       <Value Profile="(Default)">passw0rd</Value>
     </Setting>
     <Setting Name="StationID" Type="System.UInt32" Scope="User">
-      <Value Profile="(Default)">313541202</Value>
+      <Value Profile="(Default)">313541204</Value>
     </Setting>
     <Setting Name="LocalPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">62035</Value>
