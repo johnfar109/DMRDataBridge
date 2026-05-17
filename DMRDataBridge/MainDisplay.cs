@@ -458,6 +458,7 @@ namespace DMRDataBridge
                                             stationCall.LastType = packet.FrameType;
                                             stationCall.LastSeq = packet.Seq;
                                             stationCall.TimeoutCount = 0;
+                                            stationCall.Packets.Add(packet);
 
                                             if ((packet.FrameType == LastTypeEval) && (packet.FrameType == PacketType.DT_TERMINATOR_WITH_LC))
                                             {
@@ -524,7 +525,7 @@ namespace DMRDataBridge
                             }
 
                         }
-                        //wait 10ms And doo it again
+                        //wait 10ms And do it again
                         await Task.Delay(10);
                     }
                 }
@@ -536,7 +537,6 @@ namespace DMRDataBridge
             }
         }
 
-        // ** Display helpers **
 
         private void RegisterCallAction(CallCycleData call, bool start)
         {
@@ -544,6 +544,8 @@ namespace DMRDataBridge
             _cycleOutput = new CycleOutput(call, start);
             DisplayCallInList();
         }
+
+        // ** Display helpers **
 
         private void DisplayPacketCount()
         {

@@ -34,23 +34,11 @@ namespace DMRDataBridge
                 State = "Idle";
                 PktCount = callData.PacketCount.ToString();
 
-                try
-                {
-                    BER = callData.BER.Average().ToString("F3");
-                }
-                catch
-                {
-                    BER = "0.000";
-                }
+                try{BER = callData.BER.Average().ToString("F3");}
+                catch{BER = "0.000";}
 
-                try
-                {
-                    RSSI = callData.RSSI.Average().ToString("F1");
-                }
-                catch
-                {
-                    RSSI = "0.0";
-                }
+                try{RSSI = callData.RSSI.Average().ToString("F1");}
+                catch{RSSI = "0.0";}
 
                 Notes = "TO "+ callData.TimeoutCount.ToString();
             }

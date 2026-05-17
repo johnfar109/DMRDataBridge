@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,6 +28,8 @@ namespace DMRDataBridge
         public List<int> BER { get; set; }
         public List<int> RSSI { get; set; }
         public int TimeoutCount { get; set; }
+        public List<DmrdPacket> Packets { get; set; }
+
 
         public CallCycleData(DmrdPacket packet)
         {
@@ -38,9 +41,13 @@ namespace DMRDataBridge
             LastType = packet.FrameType;
             LastSeq = packet.Seq;
             PacketCount = 1;
-            BER = new List<int>(packet.BER);
-            RSSI = new List<int>(packet.RSSI);
+            BER = new List<int>();
+            BER.Add(packet.BER);
+            RSSI = new List<int>();
+            RSSI.Add(packet.RSSI);
             TimeoutCount = 0;
+            Packets = new List<DmrdPacket>();
+            Packets.Add(packet);
         }
 
     }
