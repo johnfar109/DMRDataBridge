@@ -118,5 +118,29 @@ namespace DMRDataBridge.Properties {
                 this["UdpTimeout"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("50")]
+        public int VoiceTimeoutCount {
+            get {
+                return ((int)(this["VoiceTimeoutCount"]));
+            }
+            set {
+                this["VoiceTimeoutCount"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("50")]
+        public int DataTimeoutCount {
+            get {
+                return ((int)(this["DataTimeoutCount"]));
+            }
+            set {
+                this["DataTimeoutCount"] = value;
+            }
+        }
     }
 }

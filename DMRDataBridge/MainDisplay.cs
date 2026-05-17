@@ -1,13 +1,13 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -29,10 +29,19 @@ namespace DMRDataBridge
         IAsyncResult ar_ = null;
 
         private int packetCount = 0;
+        private int packetProcCount = 0;
+        private DmrdPacket _debugPacket;
+        private CycleOutput _cycleOutput;
+
+        private Channel<DmrdPacket> dmrdPacketQueue = Channel.CreateUnbounded<DmrdPacket>();
 
         public MainDisplay()
         {
             InitializeComponent();
+
+            //Start the loop to process Packets
+            Task consumer = ConsumeAsync(dmrdPacketQueue.Reader);
+
         }
 
         private void btnConnect_Click(object sender, EventArgs e)
@@ -259,6 +268,8 @@ namespace DMRDataBridge
 
                 Disconnect();
             }
+
+            dmrdPacketQueue.Writer.Complete();
         }
 
         private void StartListening()
@@ -343,7 +354,11 @@ namespace DMRDataBridge
                             // DEBUG - Debug Display Packet Count
                             packetCount++;
                             DisplayPacketCount();
-                            
+
+                            //Send the DMRD packet over o be processed
+                            dmrdPacketQueue.Writer.WriteAsync(packet);
+
+
                             break;
                         case "MSTC":
                             // Check to See if a close command form Master
@@ -399,6 +414,137 @@ namespace DMRDataBridge
             }
         }
 
+        private async Task ConsumeAsync(ChannelReader<DmrdPacket> reader)
+        {
+            DmrdPacket packet;
+    
+            Dictionary<uint, CallCycleData> calls= new Dictionary<uint, CallCycleData>();
+
+            CallCycleData stationCall;
+
+            int i = 0;
+
+            while (true)
+            {
+                try
+                {
+                    //Look to see if we have a packet waiting 
+                    if (reader.TryRead(out packet))
+                    {
+                        packetProcCount++;
+                        DisplayProcPacketCount();
+
+                        // Spit out some debug
+                        _debugPacket = packet;
+                        DisplayPacketDebug();
+
+                        // Check for a call record for this station
+                        if (calls.TryGetValue(packet.RptrId, out stationCall))
+                        {
+                            //we have call record for this station(Rptr) (stationCall)
+                            switch (calls[packet.RptrId].CurrentCall)
+                            {
+                                case CallState.Active:
+                                    {
+                                        // call is allready running 
+                                        if (stationCall.StreamId == packet.StreamID)
+                                        {
+                                            //continue of exisiting call
+
+                                            stationCall.PacketCount++;
+                                            stationCall.BER.Add(packet.BER);
+                                            stationCall.RSSI.Add(packet.RSSI);
+                                            PacketType LastTypeEval = stationCall.LastType;
+                                            stationCall.LastType = packet.FrameType;
+                                            stationCall.LastSeq = packet.Seq;
+                                            stationCall.TimeoutCount = 0;
+
+                                            if ((packet.FrameType == LastTypeEval) && (packet.FrameType == PacketType.DT_TERMINATOR_WITH_LC))
+                                            {
+                                                stationCall.CurrentCall = CallState.Waiting;
+                                                RegisterCallAction(stationCall, false);
+                                            }
+
+                                        }
+                                        else
+                                        {
+                                            // Start of new call, StreamIDs did not match
+                                            stationCall = new CallCycleData(packet);
+                                            RegisterCallAction(stationCall,true);
+                                        }
+                                        break;
+                                    }
+                                case CallState.Waiting:
+                                default:
+                                    {
+                                        // Start of new call from Idle
+                                        stationCall = new CallCycleData(packet);
+                                        RegisterCallAction(stationCall, true);
+                                        break;
+                                    }
+                            }
+
+                            // Store back the call record for this station
+                            calls[packet.RptrId]= stationCall;
+
+                        }
+                        else
+                        {
+                            // we are starting a new call record for this station
+                            // Start of new call
+                            stationCall = new CallCycleData(packet);
+                            RegisterCallAction(stationCall, true);
+
+                            // Store a new record for this station
+                            calls.Add(packet.RptrId, stationCall);
+                        }
+
+
+                    }
+                    else
+                    {
+                        //Bump all the timeouts while we wait for packets
+                        foreach (var key in calls.Keys.ToList())
+                        {
+                            CallCycleData _tmp = calls[key];
+                            //if we have a call that is active bump up the timeout counters and check if we have timed out
+                            if (_tmp.CurrentCall == CallState.Active)
+                            {
+                                _tmp.TimeoutCount++;
+
+                                if ((_tmp.TimeoutCount >= Properties.Settings.Default.VoiceTimeoutCount && DmrdPacket.GetPacketTypeIsVoice(_tmp.LastType)) ||
+                                    (_tmp.TimeoutCount >= Properties.Settings.Default.DataTimeoutCount && DmrdPacket.GetPacketTypeIsData(_tmp.LastType)))
+                                {
+                                    // We have tri[ped a timeout waiting for more ... or the right Termination packets, call it off
+                                    _tmp.CurrentCall = CallState.Waiting;
+                                    RegisterCallAction(_tmp, false);
+                                }
+                                //Save the update
+                                calls[key] = _tmp;
+                            }
+
+                        }
+                        //wait 10ms And doo it again
+                        await Task.Delay(10);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    //Trap for tracking down Exceptions
+                    i++;
+                }
+            }
+        }
+
+        // ** Display helpers **
+
+        private void RegisterCallAction(CallCycleData call, bool start)
+        {
+            // Do things with the call that is starting or ending 
+            _cycleOutput = new CycleOutput(call, start);
+            DisplayCallInList();
+        }
+
         private void DisplayPacketCount()
         {
             if (this.InvokeRequired)
@@ -411,5 +557,46 @@ namespace DMRDataBridge
             }
         }
 
+        private void DisplayProcPacketCount()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new MethodInvoker(DisplayProcPacketCount));
+            }
+            else
+            {
+                labelProcPacketCount.Text = packetProcCount.ToString();
+            }
+        }
+
+        private void DisplayPacketDebug()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new MethodInvoker(DisplayPacketDebug));
+            }
+            else
+            {
+                lblPacket.Text = _debugPacket.FrameType.ToString();
+                lblRptrId.Text = _debugPacket.RptrId.ToString();
+            }
+        }
+
+        private void DisplayCallInList()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new MethodInvoker(DisplayCallInList));
+            }
+            else
+            {
+                listBoxCalls.Items.Add(JsonConvert.SerializeObject(_cycleOutput));
+            }
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            listBoxCalls.Items.Clear();
+        }
     }
 }

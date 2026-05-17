@@ -98,6 +98,87 @@ namespace DMRDataBridge
             RSSI = packetData[54];
         }
 
+        public static string GetPacketTypeCategoryText(PacketType type)
+        {
+            string retVal = "";
+            switch (type)
+            {
+                case PacketType.DT_VOICE_PI_HEADER:
+                case PacketType.DT_VOICE_LC_HEADER:
+                case PacketType.DT_TERMINATOR_WITH_LC:
+                case PacketType.DT_VOICE_SYNC:
+                case PacketType.DT_VOICE:
+                    retVal = "Voice";
+                    break;
+                case PacketType.DT_CSBK:
+                case PacketType.DT_DATA_HEADER:
+                case PacketType.DT_RATE_12_DATA:
+                case PacketType.DT_RATE_34_DATA:
+                case PacketType.DT_IDLE:
+                case PacketType.DT_RATE_1_DATA:
+                    retVal = "Data";
+                    break;
+                default:
+                    retVal = "<Unknown>";
+                    ; break;
+            }
+            return retVal;
+        }
+
+        public static bool GetPacketTypeIsVoice(PacketType type)
+        {
+            bool retVal = false;
+            switch (type)
+            {
+                case PacketType.DT_VOICE_PI_HEADER:
+                case PacketType.DT_VOICE_LC_HEADER:
+                case PacketType.DT_TERMINATOR_WITH_LC:
+                case PacketType.DT_VOICE_SYNC:
+                case PacketType.DT_VOICE:
+                    retVal = true;
+                    break;
+                case PacketType.DT_CSBK:
+                case PacketType.DT_DATA_HEADER:
+                case PacketType.DT_RATE_12_DATA:
+                case PacketType.DT_RATE_34_DATA:
+                case PacketType.DT_IDLE:
+                case PacketType.DT_RATE_1_DATA:
+                    retVal = false;
+                    break;
+                default:
+                    retVal = false;
+                    ; break;
+            }
+            return retVal;
+        }
+
+        public static bool GetPacketTypeIsData(PacketType type)
+        {
+            bool retVal = false;
+            switch (type)
+            {
+                case PacketType.DT_VOICE_PI_HEADER:
+                case PacketType.DT_VOICE_LC_HEADER:
+                case PacketType.DT_TERMINATOR_WITH_LC:
+                case PacketType.DT_VOICE_SYNC:
+                case PacketType.DT_VOICE:
+                    retVal = false;
+                    break;
+                case PacketType.DT_CSBK:
+                case PacketType.DT_DATA_HEADER:
+                case PacketType.DT_RATE_12_DATA:
+                case PacketType.DT_RATE_34_DATA:
+                case PacketType.DT_IDLE:
+                case PacketType.DT_RATE_1_DATA:
+                    retVal = true;
+                    break;
+                default:
+                    retVal = false;
+                    ; break;
+            }
+            return retVal;
+        }
+
 
     }
 

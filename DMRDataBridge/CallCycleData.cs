@@ -28,5 +28,20 @@ namespace DMRDataBridge
         public List<int> RSSI { get; set; }
         public int TimeoutCount { get; set; }
 
+        public CallCycleData(DmrdPacket packet)
+        {
+            CurrentCall = CallState.Active;
+            StreamId = packet.StreamID; 
+            SrcId = packet.SrcId; 
+            DstId = packet.DstId; 
+            SlotNo = packet.SlotNo;
+            LastType = packet.FrameType;
+            LastSeq = packet.Seq;
+            PacketCount = 1;
+            BER = new List<int>(packet.BER);
+            RSSI = new List<int>(packet.RSSI);
+            TimeoutCount = 0;
+        }
+
     }
 }
