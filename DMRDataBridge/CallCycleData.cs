@@ -14,6 +14,11 @@ namespace DMRDataBridge
         Active,
         Timeout
     }
+    public enum CallTypeEnum : byte
+    {
+        Group,
+        Other
+    }
 
     public struct CallCycleData
     {
@@ -22,6 +27,7 @@ namespace DMRDataBridge
         public uint SrcId { get; set; }
         public uint DstId { get; set; }
         public int SlotNo { get; set; }
+        public CallTypeEnum CallType { get; set; }
         public PacketType LastType { get; set; }
         public int LastSeq { get; set; }
         public int PacketCount { get; set; }
@@ -38,6 +44,7 @@ namespace DMRDataBridge
             SrcId = packet.SrcId; 
             DstId = packet.DstId; 
             SlotNo = packet.SlotNo;
+            CallType = (packet.CallType) ? CallTypeEnum.Other : CallTypeEnum.Group;
             LastType = packet.FrameType;
             LastSeq = packet.Seq;
             PacketCount = 1;

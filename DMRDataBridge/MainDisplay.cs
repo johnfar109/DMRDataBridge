@@ -422,8 +422,6 @@ namespace DMRDataBridge
 
             CallCycleData stationCall;
 
-            int i = 0;
-
             while (true)
             {
                 try
@@ -504,7 +502,7 @@ namespace DMRDataBridge
                     }
                     else
                     {
-                        //Bump all the timeouts while we wait for packets
+                        //Bump all the timeout counters while we wait for packets
                         foreach (var key in calls.Keys.ToList())
                         {
                             CallCycleData _tmp = calls[key];
@@ -532,7 +530,7 @@ namespace DMRDataBridge
                 catch (Exception ex)
                 {
                     //Trap for tracking down Exceptions
-                    i++;
+                    var exMsg = ex.Message;
                 }
             }
         }
