@@ -2,14 +2,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using uPLibrary.Networking.M2Mqtt.Messages;
+using static System.Windows.Forms.AxHost;
 
 namespace DMRDataBridge
 {
@@ -35,13 +39,20 @@ namespace DMRDataBridge
 
         private Channel<DmrdPacket> dmrdPacketQueue = Channel.CreateUnbounded<DmrdPacket>();
 
+        private uPLibrary.Networking.M2Mqtt.MqttClient _mqttRadioMonitorClient;
+
+        //for Cleanup
+        private bool _Closing = false;
+
         public MainDisplay()
         {
             InitializeComponent();
+        }
 
+        private void MainDisplay_Load(object sender, EventArgs e)
+        {
             //Start the loop to process Packets
             Task consumer = ConsumeAsync(dmrdPacketQueue.Reader);
-
         }
 
         private void btnConnect_Click(object sender, EventArgs e)
@@ -68,7 +79,7 @@ namespace DMRDataBridge
             bool loginGood = false;
 
             // ## Phase 1 ##
-            toolStripLabelConStatus.Text = "Login Phase 1";
+            toolStripLabelHbLinkConStatus.Text = "Login Phase 1";
             // Form and send Login Phase 1 Msg
             byte[] phase1Cmd = Encoding.ASCII.GetBytes("RPTL").Concat(BitConverter.GetBytes(Properties.Settings.Default.StationID).Reverse().ToArray()).ToArray();
 
@@ -91,28 +102,28 @@ namespace DMRDataBridge
                     }
                     else if ("RPTNAK" == phase1RespHead)
                     {
-                        toolStripLabelConStatus.Text = "Login Phase 1: Rejected";
+                        toolStripLabelHbLinkConStatus.Text = "Login Phase 1: Rejected";
                     }
                     else
                     {
-                        toolStripLabelConStatus.Text = "Login Phase 1: Unknown Response";
+                        toolStripLabelHbLinkConStatus.Text = "Login Phase 1: Unknown Response";
                     }
                 }
                 else
                 {
-                    toolStripLabelConStatus.Text = "Login Phase 1: No Response";
+                    toolStripLabelHbLinkConStatus.Text = "Login Phase 1: No Response";
                 }
             }
             catch (SocketException)
             {
-                toolStripLabelConStatus.Text = "Login Phase 1: Timeout - No Response";
+                toolStripLabelHbLinkConStatus.Text = "Login Phase 1: Timeout - No Response";
             }
 
 
             if (doPhase2)
             {
                 // ## Phase 2 ##
-                toolStripLabelConStatus.Text = "Login Phase 2";
+                toolStripLabelHbLinkConStatus.Text = "Login Phase 2";
                 // Form and send Login Phase 2 Msg
                 byte[] phase2Secret = BitConverter.GetBytes(_phase1RespSalt).Reverse().ToArray().Concat(Encoding.ASCII.GetBytes(Properties.Settings.Default.Password)).ToArray();
                 SHA256Managed hashstring = new SHA256Managed();
@@ -141,33 +152,33 @@ namespace DMRDataBridge
                             }
                             else
                             {
-                                toolStripLabelConStatus.Text = "Login Phase 2: Station Id Missmatch";
+                                toolStripLabelHbLinkConStatus.Text = "Login Phase 2: Station Id Missmatch";
                             }
                         }
                         else if ("RPTNAK" == phase2RespHead)
                         {
-                            toolStripLabelConStatus.Text = "Login Phase 2: Rejected";
+                            toolStripLabelHbLinkConStatus.Text = "Login Phase 2: Rejected";
                         }
                         else
                         {
-                            toolStripLabelConStatus.Text = "Login Phase 2: Unknown Response";
+                            toolStripLabelHbLinkConStatus.Text = "Login Phase 2: Unknown Response";
                         }
                     }
                     else
                     {
-                        toolStripLabelConStatus.Text = "Login Phase 2: No Response";
+                        toolStripLabelHbLinkConStatus.Text = "Login Phase 2: No Response";
                     }
                 }
                 catch (SocketException)
                 {
-                    toolStripLabelConStatus.Text = "Login Phase 2: Timeout - No Response";
+                    toolStripLabelHbLinkConStatus.Text = "Login Phase 2: Timeout - No Response";
                 }
             }
 
             if (doPhase3)
             {
                 // ## Phase 3 ##
-                toolStripLabelConStatus.Text = "Login Phase 3";
+                toolStripLabelHbLinkConStatus.Text = "Login Phase 3";
                 // send Login phase 3 (Conig Data)
                 byte[] phase3Cmd = Encoding.ASCII.GetBytes("RPTC").Concat(BitConverter.GetBytes(Properties.Settings.Default.StationID).Reverse().ToArray()).Concat(Encoding.ASCII.GetBytes(Properties.Settings.Default.Callsign)).ToArray();
                 // TODO Pack the rest of the station Config Data
@@ -193,36 +204,36 @@ namespace DMRDataBridge
                             }
                             else
                             {
-                                toolStripLabelConStatus.Text = "Login Phase 3: Station Id Missmatch";
+                                toolStripLabelHbLinkConStatus.Text = "Login Phase 3: Station Id Missmatch";
                             }
                         }
                         else if ("RPTNAK" == phase3RespHead)
                         {
-                            toolStripLabelConStatus.Text = "Login Phase 3: Rejected";
+                            toolStripLabelHbLinkConStatus.Text = "Login Phase 3: Rejected";
                         }
                         else
                         {
-                            toolStripLabelConStatus.Text = "Login Phase 3: Unknown Response";
+                            toolStripLabelHbLinkConStatus.Text = "Login Phase 3: Unknown Response";
                         }
 
                     }
                     else
                     {
-                        toolStripLabelConStatus.Text = "Login Phase 3: No Response";
+                        toolStripLabelHbLinkConStatus.Text = "Login Phase 3: No Response";
                     }
                 }
                 catch (SocketException)
                 {
-                    toolStripLabelConStatus.Text = "Login Phase 3: Timeout - No Response";
+                    toolStripLabelHbLinkConStatus.Text = "Login Phase 3: Timeout - No Response";
                 }
             }
 
             if (loginGood)
             {
                 _connected = true;
-                toolStripLabelConStatus.Text = "Connected";
+                toolStripLabelHbLinkConStatus.Text = "Connected";
                 toolStripLabelStatus.Text = "Ping";
-                btnConnect.Enabled = false;
+                btnHblinkConnect.Enabled = false;
                 tmrPing.Interval = Properties.Settings.Default.KeepAliveInterval;
                 tmrPing.Enabled = true;
                 _pingActive = false;
@@ -267,6 +278,14 @@ namespace DMRDataBridge
                 _udpClient.Send(closeCmd, closeCmd.Length);
 
                 Disconnect();
+            }
+
+            // handle closing of Radio Monitor connections
+            _Closing = true;
+
+            if (_mqttRadioMonitorClient != null && _mqttRadioMonitorClient.IsConnected)
+            {
+                _mqttRadioMonitorClient.Disconnect();
             }
 
             dmrdPacketQueue.Writer.Complete();
@@ -409,8 +428,8 @@ namespace DMRDataBridge
                 _connected = false;
                 tmrPing.Enabled = false;
                 _udpClient.Close();
-                toolStripLabelConStatus.Text = "Disconnected";
-                btnConnect.Enabled = true;
+                toolStripLabelHbLinkConStatus.Text = "Disconnected";
+                btnHblinkConnect.Enabled = true;
             }
         }
 
@@ -535,12 +554,19 @@ namespace DMRDataBridge
             }
         }
 
-
         private void RegisterCallAction(CallCycleData call, bool start)
         {
             // Do things with the call that is starting or ending 
             _cycleOutput = new CycleOutput(call, start);
             DisplayCallInList();
+
+            if (Properties.Settings.Default.PublishMQTT)
+            {
+                string _topic = Properties.Settings.Default.OutputDisplayTopic;
+                string _json = JsonConvert.SerializeObject(_cycleOutput);
+                byte[] _msg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(_cycleOutput));
+                _mqttRadioMonitorClient.Publish(_topic, _msg, 0, !start);
+            }
         }
 
         // ** Display helpers **
@@ -594,9 +620,164 @@ namespace DMRDataBridge
             }
         }
 
-        private void btnClear_Click(object sender, EventArgs e)
+        private void btnClearList_Click(object sender, EventArgs e)
         {
             listBoxCalls.Items.Clear();
         }
+
+        private void btnClrCounts_Click(object sender, EventArgs e)
+        {
+            packetCount = 0;
+            packetProcCount = 0;
+            labelPacketCount.Text = packetCount.ToString();
+            labelProcPacketCount.Text = packetProcCount.ToString();
+        }
+
+        private void btnMqttConnect_Click(object sender, EventArgs e)
+        {
+            RadioMonitorInit();
+
+            btnMqttConnect.Enabled = false;
+            tmrMqttCon.Enabled = true;
+            CheckMqttStatus();
+        }
+
+        private void RadioMonitorInit()
+        {
+            // create client instance 
+            _mqttRadioMonitorClient = new uPLibrary.Networking.M2Mqtt.MqttClient(Properties.Settings.Default.MqttServer);
+
+            _mqttRadioMonitorClient.ConnectionClosed += _client_MqttRadioMonitorConnectionClosed;
+
+            // register to message received 
+            //_mqttRadioMonitorClient.MqttMsgPublishReceived += _client_MqttRadioMonitorMsgPublishReceived;
+
+            RadioMonitorConnectAndSubscribe();
+        }
+
+        // ** MQTT Connection Managment **
+        private void RadioMonitorConnectAndSubscribe()
+        {
+            string clientId = "Radio Monitor Listen";
+
+            try
+            {
+                _mqttRadioMonitorClient.Connect(clientId, string.Empty, string.Empty, true, 15);
+            }
+            catch (uPLibrary.Networking.M2Mqtt.Exceptions.MqttConnectionException cex)
+            {
+                //Nothing, try again
+                RadioMonitorHandleDisconnect();
+            }
+            catch (uPLibrary.Networking.M2Mqtt.Exceptions.MqttCommunicationException cex)
+            {
+                //Nothing, try again
+                RadioMonitorHandleDisconnect();
+            }
+
+            // subscribe to the topic  
+            //string[] topics = new string[] { Properties.Settings.Default.RadioMonitorChanTopic };
+            //byte[] qosLevels = new byte[] { MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE };
+
+            //_mqttRadioMonitorClient.Subscribe(topics, qosLevels);
+
+
+            RadioMonitorShowConnected();
+
+        }
+
+        /*private void _client_MqttRadioMonitorMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
+        {
+            if ((e.Topic == Properties.Settings.Default.RadioMonitorChanTopic))
+            {
+                string payload = System.Text.UTF8Encoding.UTF8.GetString(e.Message);
+                ReadRadioMonitorMsg(payload, e.Topic);
+            }
+        }*/
+
+        private void _client_MqttRadioMonitorConnectionClosed(object sender, EventArgs e)
+        {
+            if (!_Closing)
+            {
+                RadioMonitorHandleDisconnect();
+            }
+        }
+
+        private void RadioMonitorHandleDisconnect()
+        {
+            RadioMonitorShowDisconnected();
+            System.Threading.Thread.Sleep(1);
+
+            if (!_Closing)
+                RadioMonitorConnectAndSubscribe();
+        }
+
+        private void tmrMqttCon_Tick(object sender, EventArgs e)
+        {
+            CheckMqttStatus();
+        }
+
+        private void CheckMqttStatus()
+        {
+            try
+            {
+                if (_mqttRadioMonitorClient != null && _mqttRadioMonitorClient.IsConnected)
+                {
+                    //toolStripLabelMqttConStatus.Text = "MQTT Connected";
+                    RadioMonitorShowConnected();
+                }
+                else if (!_mqttRadioMonitorClient.IsConnected)
+                {
+                    //toolStripLabelMqttConStatus.Text = "MQTT Disconnected";
+                    RadioMonitorShowDisconnected();
+                }
+            }
+            catch
+            {
+                toolStripLabelMqttConStatus.Text = "MQTT Failure";
+            }
+
+        }
+
+        private void RadioMonitorShowConnected()
+        {
+            if (!_Closing)
+            {
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(new MethodInvoker(RadioMonitorShowConnected));
+                }
+                else
+                {
+                    this.lblServerConnStatus.Text = "Connected";
+                    this.lblServerConnStatus.BackColor = Color.Green;
+                    toolStripLabelMqttConStatus.Text = "MQTT Connected";
+                }
+            }
+        }
+
+        private void RadioMonitorShowDisconnected()
+        {
+            if (!_Closing)
+            {
+                if (this.InvokeRequired)
+                {
+                    try
+                    {
+                        this.Invoke(new MethodInvoker(RadioMonitorShowDisconnected));
+                    }
+                    catch { }
+                }
+                else
+                {
+                    this.lblServerConnStatus.Text = "DISCONNECTED";
+                    this.lblServerConnStatus.BackColor = Color.Red;
+                    toolStripLabelMqttConStatus.Text = "MQTT Disconnected";
+                }
+
+            }
+        }
+
+
     }
 }

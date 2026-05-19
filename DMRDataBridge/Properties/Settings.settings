@@ -32,5 +32,14 @@
     <Setting Name="DataTimeoutCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">50</Value>
     </Setting>
+    <Setting Name="MqttServer" Type="System.String" Scope="User">
+      <Value Profile="(Default)">10.10.1.7</Value>
+    </Setting>
+    <Setting Name="OutputDisplayTopic" Type="System.String" Scope="User">
+      <Value Profile="(Default)">radio/raw/tech</Value>
+    </Setting>
+    <Setting Name="PublishMQTT" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

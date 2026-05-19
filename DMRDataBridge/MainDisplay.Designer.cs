@@ -29,12 +29,14 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.btnConnect = new System.Windows.Forms.Button();
+            this.btnHblinkConnect = new System.Windows.Forms.Button();
             this.tmrPing = new System.Windows.Forms.Timer(this.components);
             this.toolStripMain = new System.Windows.Forms.ToolStrip();
-            this.toolStripLabelConStatus = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripLabelHbLink = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripLabelHbLinkConStatus = new System.Windows.Forms.ToolStripLabel();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripLabelStatus = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripLabelMqttConStatus = new System.Windows.Forms.ToolStripLabel();
             this.label1 = new System.Windows.Forms.Label();
             this.labelPacketCount = new System.Windows.Forms.Label();
             this.lblPacket = new System.Windows.Forms.Label();
@@ -44,20 +46,24 @@
             this.listBoxCalls = new System.Windows.Forms.ListBox();
             this.label4 = new System.Windows.Forms.Label();
             this.labelProcPacketCount = new System.Windows.Forms.Label();
-            this.btnClear = new System.Windows.Forms.Button();
+            this.btnClearList = new System.Windows.Forms.Button();
+            this.btnClrCounts = new System.Windows.Forms.Button();
+            this.btnMqttConnect = new System.Windows.Forms.Button();
+            this.lblServerConnStatus = new System.Windows.Forms.Label();
+            this.tmrMqttCon = new System.Windows.Forms.Timer(this.components);
             this.toolStripMain.SuspendLayout();
             this.SuspendLayout();
             // 
-            // btnConnect
+            // btnHblinkConnect
             // 
-            this.btnConnect.Location = new System.Drawing.Point(18, 18);
-            this.btnConnect.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.btnConnect.Name = "btnConnect";
-            this.btnConnect.Size = new System.Drawing.Size(112, 35);
-            this.btnConnect.TabIndex = 0;
-            this.btnConnect.Text = "Connect";
-            this.btnConnect.UseVisualStyleBackColor = true;
-            this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
+            this.btnHblinkConnect.Location = new System.Drawing.Point(18, 18);
+            this.btnHblinkConnect.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.btnHblinkConnect.Name = "btnHblinkConnect";
+            this.btnHblinkConnect.Size = new System.Drawing.Size(229, 35);
+            this.btnHblinkConnect.TabIndex = 0;
+            this.btnHblinkConnect.Text = "Hblink Connect";
+            this.btnHblinkConnect.UseVisualStyleBackColor = true;
+            this.btnHblinkConnect.Click += new System.EventHandler(this.btnConnect_Click);
             // 
             // tmrPing
             // 
@@ -69,32 +75,47 @@
             this.toolStripMain.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.toolStripMain.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.toolStripMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripLabelConStatus,
+            this.toolStripLabelHbLink,
+            this.toolStripLabelHbLinkConStatus,
             this.toolStripSeparator1,
-            this.toolStripLabelStatus});
-            this.toolStripMain.Location = new System.Drawing.Point(0, 391);
+            this.toolStripLabelStatus,
+            this.toolStripLabelMqttConStatus});
+            this.toolStripMain.Location = new System.Drawing.Point(0, 383);
             this.toolStripMain.Name = "toolStripMain";
             this.toolStripMain.Padding = new System.Windows.Forms.Padding(0, 0, 3, 0);
-            this.toolStripMain.Size = new System.Drawing.Size(1242, 30);
+            this.toolStripMain.Size = new System.Drawing.Size(1242, 38);
             this.toolStripMain.TabIndex = 2;
             this.toolStripMain.Text = "toolStrip1";
             // 
-            // toolStripLabelConStatus
+            // toolStripLabelHbLink
             // 
-            this.toolStripLabelConStatus.Name = "toolStripLabelConStatus";
-            this.toolStripLabelConStatus.Size = new System.Drawing.Size(119, 25);
-            this.toolStripLabelConStatus.Text = "Disconnected";
+            this.toolStripLabelHbLink.Name = "toolStripLabelHbLink";
+            this.toolStripLabelHbLink.Size = new System.Drawing.Size(67, 33);
+            this.toolStripLabelHbLink.Text = "Hblink:";
+            // 
+            // toolStripLabelHbLinkConStatus
+            // 
+            this.toolStripLabelHbLinkConStatus.Name = "toolStripLabelHbLinkConStatus";
+            this.toolStripLabelHbLinkConStatus.Size = new System.Drawing.Size(119, 33);
+            this.toolStripLabelHbLinkConStatus.Text = "Disconnected";
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 30);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 38);
             // 
             // toolStripLabelStatus
             // 
             this.toolStripLabelStatus.Name = "toolStripLabelStatus";
-            this.toolStripLabelStatus.Size = new System.Drawing.Size(84, 25);
+            this.toolStripLabelStatus.Size = new System.Drawing.Size(84, 33);
             this.toolStripLabelStatus.Text = "Waiting...";
+            // 
+            // toolStripLabelMqttConStatus
+            // 
+            this.toolStripLabelMqttConStatus.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.toolStripLabelMqttConStatus.Name = "toolStripLabelMqttConStatus";
+            this.toolStripLabelMqttConStatus.Size = new System.Drawing.Size(171, 33);
+            this.toolStripLabelMqttConStatus.Text = "MQTT Disconnected";
             // 
             // label1
             // 
@@ -186,22 +207,59 @@
             this.labelProcPacketCount.TabIndex = 4;
             this.labelProcPacketCount.Text = "0";
             // 
-            // btnClear
+            // btnClearList
             // 
-            this.btnClear.Location = new System.Drawing.Point(1124, 95);
-            this.btnClear.Name = "btnClear";
-            this.btnClear.Size = new System.Drawing.Size(106, 33);
-            this.btnClear.TabIndex = 7;
-            this.btnClear.Text = "Clear List";
-            this.btnClear.UseVisualStyleBackColor = true;
-            this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
+            this.btnClearList.Location = new System.Drawing.Point(1117, 88);
+            this.btnClearList.Name = "btnClearList";
+            this.btnClearList.Size = new System.Drawing.Size(112, 33);
+            this.btnClearList.TabIndex = 7;
+            this.btnClearList.Text = "Clear List";
+            this.btnClearList.UseVisualStyleBackColor = true;
+            this.btnClearList.Click += new System.EventHandler(this.btnClearList_Click);
+            // 
+            // btnClrCounts
+            // 
+            this.btnClrCounts.Location = new System.Drawing.Point(999, 88);
+            this.btnClrCounts.Name = "btnClrCounts";
+            this.btnClrCounts.Size = new System.Drawing.Size(112, 33);
+            this.btnClrCounts.TabIndex = 7;
+            this.btnClrCounts.Text = "Clear Counts";
+            this.btnClrCounts.UseVisualStyleBackColor = true;
+            this.btnClrCounts.Click += new System.EventHandler(this.btnClrCounts_Click);
+            // 
+            // btnMqttConnect
+            // 
+            this.btnMqttConnect.Location = new System.Drawing.Point(1000, 18);
+            this.btnMqttConnect.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.btnMqttConnect.Name = "btnMqttConnect";
+            this.btnMqttConnect.Size = new System.Drawing.Size(229, 35);
+            this.btnMqttConnect.TabIndex = 0;
+            this.btnMqttConnect.Text = "MQTT Connect";
+            this.btnMqttConnect.UseVisualStyleBackColor = true;
+            this.btnMqttConnect.Click += new System.EventHandler(this.btnMqttConnect_Click);
+            // 
+            // lblServerConnStatus
+            // 
+            this.lblServerConnStatus.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblServerConnStatus.Location = new System.Drawing.Point(1000, 52);
+            this.lblServerConnStatus.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblServerConnStatus.Name = "lblServerConnStatus";
+            this.lblServerConnStatus.Size = new System.Drawing.Size(229, 33);
+            this.lblServerConnStatus.TabIndex = 30;
+            this.lblServerConnStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // tmrMqttCon
+            // 
+            this.tmrMqttCon.Interval = 10000;
             // 
             // MainDisplay
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1242, 421);
-            this.Controls.Add(this.btnClear);
+            this.Controls.Add(this.lblServerConnStatus);
+            this.Controls.Add(this.btnClrCounts);
+            this.Controls.Add(this.btnClearList);
             this.Controls.Add(this.listBoxCalls);
             this.Controls.Add(this.lblRptrId);
             this.Controls.Add(this.lblPacket);
@@ -212,11 +270,13 @@
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.toolStripMain);
-            this.Controls.Add(this.btnConnect);
+            this.Controls.Add(this.btnMqttConnect);
+            this.Controls.Add(this.btnHblinkConnect);
             this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.Name = "MainDisplay";
             this.Text = "DMR Data Bridge";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainDisplay_FormClosed);
+            this.Load += new System.EventHandler(this.MainDisplay_Load);
             this.toolStripMain.ResumeLayout(false);
             this.toolStripMain.PerformLayout();
             this.ResumeLayout(false);
@@ -226,10 +286,10 @@
 
         #endregion
 
-        private System.Windows.Forms.Button btnConnect;
+        private System.Windows.Forms.Button btnHblinkConnect;
         private System.Windows.Forms.Timer tmrPing;
         private System.Windows.Forms.ToolStrip toolStripMain;
-        private System.Windows.Forms.ToolStripLabel toolStripLabelConStatus;
+        private System.Windows.Forms.ToolStripLabel toolStripLabelHbLinkConStatus;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripLabel toolStripLabelStatus;
         private System.Windows.Forms.Label label1;
@@ -241,7 +301,13 @@
         private System.Windows.Forms.ListBox listBoxCalls;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label labelProcPacketCount;
-        private System.Windows.Forms.Button btnClear;
+        private System.Windows.Forms.Button btnClearList;
+        private System.Windows.Forms.ToolStripLabel toolStripLabelHbLink;
+        private System.Windows.Forms.ToolStripLabel toolStripLabelMqttConStatus;
+        private System.Windows.Forms.Button btnClrCounts;
+        private System.Windows.Forms.Button btnMqttConnect;
+        private System.Windows.Forms.Label lblServerConnStatus;
+        private System.Windows.Forms.Timer tmrMqttCon;
     }
 }
 

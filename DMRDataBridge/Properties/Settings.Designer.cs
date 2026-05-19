@@ -142,5 +142,41 @@ namespace DMRDataBridge.Properties {
                 this["DataTimeoutCount"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10.10.1.7")]
+        public string MqttServer {
+            get {
+                return ((string)(this["MqttServer"]));
+            }
+            set {
+                this["MqttServer"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("radio/raw/tech")]
+        public string OutputDisplayTopic {
+            get {
+                return ((string)(this["OutputDisplayTopic"]));
+            }
+            set {
+                this["OutputDisplayTopic"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool PublishMQTT {
+            get {
+                return ((bool)(this["PublishMQTT"]));
+            }
+            set {
+                this["PublishMQTT"] = value;
+            }
+        }
     }
 }
