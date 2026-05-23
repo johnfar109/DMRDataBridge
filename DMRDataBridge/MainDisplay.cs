@@ -41,6 +41,8 @@ namespace DMRDataBridge
 
         private uPLibrary.Networking.M2Mqtt.MqttClient _mqttRadioMonitorClient;
 
+        private bool _mqttConnected = false;
+
         //for Cleanup
         private bool _Closing = false;
 
@@ -477,7 +479,10 @@ namespace DMRDataBridge
                                             stationCall.TimeoutCount = 0;
                                             stationCall.Packets.Add(packet);
 
-                                            if ((packet.FrameType == LastTypeEval) && (packet.FrameType == PacketType.DT_TERMINATOR_WITH_LC))
+                                            //try and figure out if this is the end of the transmition
+                                            if ((PacketType.DT_VOICE == LastTypeEval) && (packet.FrameType == PacketType.DT_TERMINATOR_WITH_LC) ||
+                                                (PacketType.DT_DATA_HEADER == LastTypeEval) && (packet.FrameType == PacketType.DT_RATE_12_DATA) ||
+                                                (packet.FrameType == LastTypeEval) && (packet.FrameType == PacketType.DT_TERMINATOR_WITH_LC) )
                                             {
                                                 stationCall.CurrentCall = CallState.Waiting;
                                                 RegisterCallAction(stationCall, false);
@@ -560,7 +565,7 @@ namespace DMRDataBridge
             _cycleOutput = new CycleOutput(call, start);
             DisplayCallInList();
 
-            if (Properties.Settings.Default.PublishMQTT)
+            if (_mqttConnected && Properties.Settings.Default.PublishMQTT)
             {
                 string _topic = Properties.Settings.Default.OutputDisplayTopic;
                 string _json = JsonConvert.SerializeObject(_cycleOutput);
@@ -681,7 +686,7 @@ namespace DMRDataBridge
 
             //_mqttRadioMonitorClient.Subscribe(topics, qosLevels);
 
-
+            _mqttConnected = true;
             RadioMonitorShowConnected();
 
         }
@@ -705,6 +710,7 @@ namespace DMRDataBridge
 
         private void RadioMonitorHandleDisconnect()
         {
+            _mqttConnected = false;
             RadioMonitorShowDisconnected();
             System.Threading.Thread.Sleep(1);
 
@@ -724,11 +730,13 @@ namespace DMRDataBridge
                 if (_mqttRadioMonitorClient != null && _mqttRadioMonitorClient.IsConnected)
                 {
                     //toolStripLabelMqttConStatus.Text = "MQTT Connected";
+                    _mqttConnected = true;
                     RadioMonitorShowConnected();
                 }
                 else if (!_mqttRadioMonitorClient.IsConnected)
                 {
                     //toolStripLabelMqttConStatus.Text = "MQTT Disconnected";
+                    _mqttConnected = false;
                     RadioMonitorShowDisconnected();
                 }
             }
