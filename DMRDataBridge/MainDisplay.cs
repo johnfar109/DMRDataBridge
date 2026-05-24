@@ -32,6 +32,8 @@ namespace DMRDataBridge
 
         IAsyncResult ar_ = null;
 
+        private string _toolStripLabelStatus = string.Empty;
+
         private int packetCount = 0;
         private int packetProcCount = 0;
         private DmrdPacket _debugPacket;
@@ -234,7 +236,8 @@ namespace DMRDataBridge
             {
                 _connected = true;
                 toolStripLabelHbLinkConStatus.Text = "Connected";
-                toolStripLabelStatus.Text = "Ping";
+                _toolStripLabelStatus= "Ping";
+                DisplayToolStripLabelStatus();
                 btnHblinkConnect.Enabled = false;
                 tmrPing.Interval = Properties.Settings.Default.KeepAliveInterval;
                 tmrPing.Enabled = true;
@@ -327,23 +330,27 @@ namespace DMRDataBridge
 
                                     if (_pingState)
                                     {
-                                        toolStripLabelStatus.Text = "Ping";
+                                        _toolStripLabelStatus = "Ping";
+                                        DisplayToolStripLabelStatus();
                                     }
                                     else
                                     {
-                                        toolStripLabelStatus.Text = "Pong";
+                                        _toolStripLabelStatus= "Pong";
+                                        DisplayToolStripLabelStatus();
                                     }
                                     _pingState = !_pingState;
 
                                 }
                                 else
                                 {
-                                    toolStripLabelStatus.Text = "Ping: Station Id Missmatch";
+                                    _toolStripLabelStatus = "Ping: Station Id Missmatch";
+                                    DisplayToolStripLabelStatus();
                                 }
                             }
                             else
                             {
-                                toolStripLabelStatus.Text = "Error: Unknown 'MSTP' Response";
+                                _toolStripLabelStatus = "Error: Unknown 'MSTP' Response";
+                                DisplayToolStripLabelStatus();
                             }
                             break;
                         case "MSTN":
@@ -354,16 +361,19 @@ namespace DMRDataBridge
                                 var respStationIdNak = BitConverter.ToUInt32(respBody.Skip(6).Reverse().ToArray(), 0);
                                 if (Properties.Settings.Default.StationID == respStationIdNak)
                                 {
-                                    toolStripLabelStatus.Text = "Error: NAK";
+                                    _toolStripLabelStatus = "Error: NAK";
+                                    DisplayToolStripLabelStatus();
                                 }
                                 else
                                 {
-                                    toolStripLabelStatus.Text = "Error: NAK - Station Id Missmatch";
+                                    _toolStripLabelStatus = "Error: NAK - Station Id Missmatch";
+                                    DisplayToolStripLabelStatus();
                                 }
                             }
                             else
                             {
-                                toolStripLabelStatus.Text = "Error: Unknown 'MSTN' Response";
+                                _toolStripLabelStatus = "Error: Unknown 'MSTN' Response";
+                                DisplayToolStripLabelStatus();
                             }
                             break;
                         case "DMRD":
@@ -376,7 +386,7 @@ namespace DMRDataBridge
                             packetCount++;
                             DisplayPacketCount();
 
-                            //Send the DMRD packet over o be processed
+                            //Send the DMRD packet over to be processed
                             dmrdPacketQueue.Writer.WriteAsync(packet);
 
 
@@ -388,21 +398,25 @@ namespace DMRDataBridge
                             {
                                 // sutdown the connection
                                 packetGood = false;
-                                toolStripLabelStatus.Text = "Master: Close";
+                                _toolStripLabelStatus = "Master: Close";
+                                DisplayToolStripLabelStatus();
                             }
                             else
                             {
-                                toolStripLabelStatus.Text = "Error: Unknown 'MSTC' Response";
+                                _toolStripLabelStatus = "Error: Unknown 'MSTC' Response";
+                                DisplayToolStripLabelStatus();
                             }
                             break;
                         default:
-                                toolStripLabelStatus.Text = "Error: Unknown Packet Type " + packetType;
+                                _toolStripLabelStatus = "Error: Unknown Packet Type " + packetType;
+                                DisplayToolStripLabelStatus();
                             break;
                     } 
                 }
                 else
                 {
-                    toolStripLabelStatus.Text = "Error: Empty Packet";
+                    _toolStripLabelStatus = "Error: Empty Packet";
+                    DisplayToolStripLabelStatus();
                 }
 
                 if (packetGood)
@@ -585,6 +599,18 @@ namespace DMRDataBridge
             else
             {
                 labelPacketCount.Text = packetCount.ToString();
+            }
+        }
+
+        private void DisplayToolStripLabelStatus()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new MethodInvoker(DisplayToolStripLabelStatus));
+            }
+            else
+            {
+                toolStripLabelStatus.Text = _toolStripLabelStatus;
             }
         }
 
